@@ -51,9 +51,9 @@ Orchagent is one of the most critical components in SONiC that is responsible fo
 
 The requirements for orchagent error handling improvement are as follows:
 
-    - Handle all ASIC/SAI programming errors gracefully without causing orchagent to crash or restart
-    - Return appropriate value (zero or non-zero) to applications so that they can determine the right error recovery mechanism (For eg: rollback or retry)
-    - Add appropriate logs when an error is handled to aid debugging or automated log analysis tools
+- Handle all ASIC/SAI programming errors gracefully without causing orchagent to crash or restart
+- Return appropriate value (zero or non-zero) to applications so that they can determine the right error recovery mechanism (For eg:   rollback or retry)
+- Add appropriate logs when an error is handled to aid debugging or automated log analysis tools
 
 #### Motivation
 
@@ -69,17 +69,17 @@ There are three potential ways in which orchagent behavior today can be improved
 
 1. Avoid missed notifications from APP_DB to orchagent
 
-There have been instances where orchagent missed certain APP_DB table entry notifications in a race condition with a rather innocuous logrotate event. This caused those notifications to linger in the redis channel between APP_DB and orchagent without being consumed atll by Orchagent. It is quite obvious that this can be quite detrimental for entries which undergo lots of updates under normal circumstances. For eg: a link down event on a portchannel member may not be synced to ASIC-DB due to this resulting in traffic blackhole. While the root cause of that was a bug in code which was fixed later, it was understood that such conditions are painfully difficult to debug and mitigate without proper failsafe mechanisms. One of the mechanisms that we propose to alleviate this problem is to have a script that monitors APP_DB for unconsumed entries periodically using monit framework and nudge the notifications down to orchagent using sonic-db-cli PUBLISH command so they get consumed right away.
+    There have been instances where orchagent missed certain APP_DB table entry notifications in a race condition with a rather innocuous logrotate event. This caused those notifications to linger in the redis channel between APP_DB and orchagent without being consumed atll by Orchagent. It is quite obvious that this can be quite detrimental for entries which undergo lots of updates under normal circumstances. For eg: a link down event on a portchannel member may not be synced to ASIC-DB due to this resulting in traffic blackhole. While the root cause of that was a bug in code which was fixed later, it was understood that such conditions are painfully difficult to debug and mitigate without proper failsafe mechanisms. One of the mechanisms that we propose to alleviate this problem is to have a script that monitors APP_DB for unconsumed entries periodically using monit framework and nudge the notifications down to orchagent using sonic-db-cli PUBLISH command so they get consumed right away.
 
 2. Detect out-of-sync entries between APP_DB and ASIC_DB
 
-This is a situation that is similar to the one discussed above, but slightly different in the sense that these notifications are not missed by Orchagent. These notifications have been processed by orchagent but have not been synced to ASIC-DB due to either failed dependency checks or other conflicts resulting in retries. In this case the entries are part of m_toSync data structure until they are successfully added to ASIC_DB. A good example for such a situation is where a route addition fails when the nexthop neighbor is not resolved. This will trigger a set of retries in orchagent with the expectation that it will eventually succeed, however in many cases the situation may not resolve itself and will need an intervention. Such situations are easily overlooked when trying to narrow down the root cause for a traffic loss scenario in a complex network deployment. While route_check.py script does help to identify such routes which are out of sync between APP_DB and ASIC_DB, a more generic object-agnostic way of determining entries that are out of sync between APP_DB and ASIC_DB at any given time is needed. Our proposal is to either leverage the script used in #1 to also determine such pending entries in a periodic manner using monit or otherwise extend the main loop of orchagent to check for pending entries after each iteration, i.e after executing doTask() methods for all the orchs in m_orchList once.
+    This is a situation that is similar to the one discussed above, but slightly different in the sense that these notifications are not missed by Orchagent. These notifications have been processed by orchagent but have not been synced to ASIC-DB due to either failed dependency checks or other conflicts resulting in retries. In this case the entries are part of m_toSync data structure until they are successfully added to ASIC_DB. A good example for such a situation is where a route addition fails when the nexthop neighbor is not resolved. This will trigger a set of retries in orchagent with the expectation that it will eventually succeed, however in many cases the situation may not resolve itself and will need an intervention. Such situations are easily overlooked when trying to narrow down the root cause for a traffic loss scenario in a complex network deployment. While route_check.py script does help to identify such routes which are out of sync between APP_DB and ASIC_DB, a more generic object-agnostic way of determining entries that are out of sync between APP_DB and ASIC_DB at any given time is needed. Our proposal is to either leverage the script used in #1 to also determine such pending entries in a periodic manner using monit or otherwise extend the main loop of orchagent to check for pending entries after each iteration, i.e after executing doTask() methods for all the orchs in m_orchList once.
 
 3. Avoid self-induced orchagent aborts in response to SAI errors
 
-The most significant change in this proposal is to do away with self-induced orchagent crashes when a SAI API call fails (i.e, when the call returns anything other than SAI_STATUS_SUCCESS) as is the case for a large proportion of SAI errors handled today by different orchs that constitute orchagent.
+    The most significant change in this proposal is to do away with self-induced orchagent crashes when a SAI API call fails (i.e, when the call returns anything other than SAI_STATUS_SUCCESS) as is the case for a large proportion of SAI errors handled today by different orchs that constitute orchagent.
 
-All existing SAI error statuses are planned to be gracefully handled by orchagent without causing it to exit. The orchagent error handling behavioral changes introduced here will be the standard behavior going forward on all SONiC platforms with no option to retain the existing behavior. All changes will be limited to orchagent inside the swss container and in standalone scripts that are run periodically using monit infrastructure in SONiC.
+    All existing SAI error statuses are planned to be gracefully handled by orchagent without causing it to exit. The orchagent error handling behavioral changes introduced here will be the standard behavior going forward on all SONiC platforms with no option to retain the existing behavior. All changes will be limited to orchagent inside the swss container and in standalone scripts that are run periodically using monit infrastructure in SONiC.
 
 ## Orchagent changes
 
@@ -111,7 +111,7 @@ Call flow:
 
 1. When query_orchagent binary is run with the option "-p", it will create a NotificationProducer for APP_DB "ORCHAGENTQUERY" channel and a NotificationConsumer for APP_DB "ORCHAGENTQUERYREPLY" channel. It will then send a notification on the "ORCHAGENTQUERY" channel with opcode set to "orchagent" (as is done today for "RESTARTCHECK" notifications) and FieldValueTuple containing the following: 
 
-- "PendingCheck": "true"
+    - "PendingCheck": "true"
 
 2. When doTask() for switchorch gets called, this notification is processed by switchorch which sets a member variable m_getPendingEntries to True.
 
@@ -129,7 +129,7 @@ Call flow:
 
 ![orch error handling](images/orch_error_handling.png)
 
-1. When orchagent receives an error notification from syncd for a SAI API call that failed,
+When orchagent receives an error notification from syncd for a SAI API call that failed,
 one of three actions will be performed in one of the handleSai<Op>Status() functions in orchagent, depending on whether the operation was a create, set, remove or get:
 
  a. If the error is something that can resolve itself with subsequent retries like for eg: SAI_STATUS_OBJECT_IN_USE or SAI_STATUS_TABLE_FULL, handleSai<Op>Status() will return task_need_retry.
