@@ -132,16 +132,15 @@ Call flow:
 When orchagent receives an error notification from syncd for a SAI API call that failed,
 one of three actions will be performed in one of the handleSai<Op>Status() functions in orchagent, depending on whether the operation was a create, set, remove or get:
 
- a. If the error is something that can resolve itself with subsequent retries like for eg: SAI_STATUS_OBJECT_IN_USE or SAI_STATUS_TABLE_FULL, handleSai<Op>Status() will return task_need_retry.
+ a. If the error is something that can resolve itself with subsequent retries like for eg: SAI_STATUS_OBJECT_IN_USE or SAI_STATUS_TABLE_FULL, handleSai<Op>Status() will return task_need_retry. Such errors are highlighted in yellow in the table below.
 
  b. If the error is something that is unlikely to be resolved with a subsequent attempt like for eg: SAI_STATUS_NOT_SUPPORTED, orchagent will call handleSaiFailure() with abort_on_failure set to False by default so orchagent does not exit and handleSai<Op>Status() will return task_failed. This will also log an ERROR syslog message.
+ Such errors are highlighted in red in the table below.
 
- c. If the error is rather harmless like SAI_STATUS_ITEM_ALREADY_EXISTS or SAI_STATUS_ITEM_NOT_FOUND, orchagent will log an INFO syslog message and return task_success such that no retries will be attempted.
-
+ c. If the error is rather harmless like SAI_STATUS_ITEM_ALREADY_EXISTS or SAI_STATUS_ITEM_NOT_FOUND, orchagent will log an INFO syslog message and return task_success such that no retries will be attempted. Such errors are highlighted in green in the table below.
 
 ![sai status handling](images/sai_status_handling.png)
  
-
 ### SAI API
 
 No new SAI APIs are introduced as part of this functionaility.
