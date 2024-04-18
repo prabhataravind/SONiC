@@ -173,20 +173,32 @@ No significant additional memory overhead is anticipated in implementing this fu
 
 The unit test plan for orchagent error handling is documented below:
 
-S.No | Test description                                             |
----- | ------------------------------------------------------------ |
-1.1  | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_SUPPORTED is returned |
-1.2  | Gtest to verify that orchagent does not crash when SAI_STATUS_NO_MEMORY is returned |
-1.3  | Gtest to verify that orchagent does not crash when SAI_STATUS_INSUFFICIENT_RESOURCES is returned |
-1.4  | Gtest to verify that orchagent does not crash when SAI_STATUS_INVALID_PARAMETER is returned |
-1.5  | Gtest to verify that orchagent does not crash when SAI_STATUS_ITEM_ALREADY_EXISTS is returned |
-1.6  | Gtest to verify that orchagent does not crash when SAI_STATUS_ITEM_NOT_FOUND is returned |
-1.7  | Gtest to verify that orchagent does not crash when SAI_STATUS_TABLE_FULL is returned |
-1.8  | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_IMPLEMENTED is returned |
-1.9  | Gtest to verify that orchagent does not crash when SAI_STATUS_OBJECT_IN_USE is returned |
-1.10 | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_EXECUTED is returned |
+| S.No | Test description                                             |
+| ---- | ------------------------------------------------------------ |
+| 1  | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_SUPPORTED is returned |
+| 2  | Gtest to verify that orchagent does not crash when SAI_STATUS_NO_MEMORY is returned |
+| 3  | Gtest to verify that orchagent does not crash when SAI_STATUS_INSUFFICIENT_RESOURCES is returned |
+| 4  | Gtest to verify that orchagent does not crash when SAI_STATUS_INVALID_PARAMETER is returned |
+| 5  | Gtest to verify that orchagent does not crash when SAI_STATUS_ITEM_ALREADY_EXISTS is returned |
+| 6  | Gtest to verify that orchagent does not crash when SAI_STATUS_ITEM_NOT_FOUND is returned |
+| 7  | Gtest to verify that orchagent does not crash when SAI_STATUS_TABLE_FULL is returned |
+| 8  | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_IMPLEMENTED is returned |
+| 9  | Gtest to verify that orchagent does not crash when SAI_STATUS_OBJECT_IN_USE is returned |
+| 10 | Gtest to verify that orchagent does not crash when SAI_STATUS_NOT_EXECUTED is returned |
 
 ### System Test cases
 
+| S.No | SAI  status |   Test description                                             |  Expectation |
+| -----| ----------- | -------------------------------------------------------------- | ------------ |
+|   1  |  SAI_STATUS_INSUFFICIENT_RESOURCES            | Create as many VRFs as possible to induce SAI_STATUS_INSUFFICIENT_RESOURCES| Orchagent should retry the operation and not crash |
+|   2  | SAI_STATUS_TABLE_FULL                         | Create as many nexthop groups as possible to induce SAI_STATUS_INSUFFICIENT_RESOURCES | Orchagent should retry the operation and not crash |
+|   3  |  SAI_STATUS_OBJECT_IN_USE                     | Add a neighbor and route entry pointing to that as nexthop and remove the neighbor| Orchagent should retry the operation and not crash |
+|   4  |  SAI_STATUS_ITEM_NOT_FOUND                    | Remove a route entry that does not exist| Orchagent should not crash |
+|   5  |  SAI_STATUS_ITEM_ALREADY_EXISTS               | Add a route entry that matches loopback IP route entry | Orchagent should not crash |
+|   6  |  SAI_STATUS_NOT_IMPLEMENTED                   | Create a trap entry for SAI_HOSTIF_TRAP_TYPE_ISIS | Orchagent should not crash |
+|   7  | SAI_STATUS_NOT_EXECUTED                       | Add mutliple duplicate routes in one shot using swssconfig | Orchagent should not crash and an error message should be logged in syslog |
+
 ### Open/Action items
+
+Leverage ERROR_DB that is already available to escalate the errors from Orchagent to upper layers/applications.
 
